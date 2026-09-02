@@ -1,0 +1,9 @@
+.filter-wrap { position: relative; }
+.filter-active { color: var(--accent); border-color: #326c57; }
+.filter-popover { position: absolute; z-index: 8; top: 39px; left: 0; width: 520px; padding: 12px; background: var(--panel-2); border: 1px solid #3a4651; border-radius: 7px; box-shadow: 0 14px 40px #000b; }
+.filter-popover > header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.filter-condition { display: grid; grid-template-columns: 1fr 120px 1fr 25px; gap: 5px; margin-bottom: 6px; }
+.filter-condition .icon-button { padding: 3px; }
+.sort-row { display: grid; grid-template-columns: auto 1fr 115px; align-items: center; gap: 7px; margin: 12px 0 7px; padding-top: 10px; border-top: 1px solid var(--border); }
+.filter-popover > small { color: var(--muted); }
+@media (max-width: 650px) { .filter-popover { position: fixed; inset: 100px 12px auto; width: auto; } }
