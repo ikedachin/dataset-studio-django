@@ -1,0 +1,48 @@
+.sync-rules-help {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.sync-rules-help summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: var(--blue);
+  font-weight: 600;
+  list-style-position: inside;
+}
+.sync-rules-help[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+.sync-rules-help-content {
+  padding: 11px 13px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.sync-rules-help-content p {
+  margin: 0 0 9px;
+}
+.sync-rules-help-content pre {
+  margin: 0 0 10px;
+  padding: 10px;
+  background: #0b1016;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font: 10px/1.55 DM Mono;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sync-rules-help-content ul {
+  margin: 0 0 9px;
+  padding-left: 19px;
+}
+.sync-rules-help-content code {
+  color: var(--accent);
+  font: 10px DM Mono;
+}
+.sync-rules-note {
+  color: var(--amber);
+  margin-bottom: 0 !important;
+}

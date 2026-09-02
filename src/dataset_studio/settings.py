@@ -51,7 +51,7 @@ ASGI_APPLICATION = "dataset_studio.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("DATASET_STUDIO_DB", str(APP_DATA_DIR / "dataset-studio.sqlite3")),
+        "NAME": os.environ.get("DATASET_STUDIO_DB", str(BASE_DIR / "dataset-studio.sqlite3")),
         "OPTIONS": {"timeout": 20},
     }
 }

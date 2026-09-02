@@ -7,3 +7,4 @@ frontend/node_modules/
 frontend/.vite/
 *.sqlite3
 test-100k.jsonl
+dataset-studio.sqlite3

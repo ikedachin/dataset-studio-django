@@ -3,6 +3,18 @@ import { X } from "lucide-react";
 import { api, jsonBody } from "../api/client";
 import type { Project } from "../types";
 
+const SYNC_RULE_EXAMPLE = JSON.stringify(
+  [
+    { source: "question", target: "messages[0].content" },
+    {
+      template: "<think>{{ thinking }}</think>\n{{ answer }}",
+      target: "messages[1].content",
+    },
+  ],
+  null,
+  2,
+);
+
 export function ProjectSettings({
   project,
   onSaved,
@@ -119,6 +131,30 @@ export function ProjectSettings({
               rows={10}
             />
           </label>
+          <details className="sync-rules-help">
+            <summary>Manual sync rulesの書き方の例</summary>
+            <div className="sync-rules-help-content">
+              <p>
+                <code>source</code>の値を<code>target</code>へコピーする例と、
+                <code>template</code>で複数フィールドを組み立てる例です。
+              </p>
+              <pre>{SYNC_RULE_EXAMPLE}</pre>
+              <ul>
+                <li>
+                  <code>source</code>: コピー元のJSON path
+                </li>
+                <li>
+                  <code>target</code>: コピー先のJSON path
+                </li>
+                <li>
+                  <code>{"{{ field.path }}"}</code>: 現在のRecordから値を参照
+                </li>
+              </ul>
+              <p className="sync-rules-note">
+                Syncは自動実行されません。Record画面のSyncからPreviewを確認し、明示的にApplyした場合だけ反映されます。
+              </p>
+            </div>
+          </details>
           {summary && (
             <div className="validation-summary">
               <strong>{summary.total} total</strong>

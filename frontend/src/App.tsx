@@ -27,6 +27,7 @@ import { ProjectSettings } from "./components/ProjectSettings";
 import { RawJsonEditor } from "./components/RawJsonEditor";
 import { RecordList } from "./components/RecordList";
 import { useAutosave } from "./hooks/useAutosave";
+import { useResizablePanes } from "./hooks/useResizablePanes";
 import type {
   DiffItem,
   JsonObject,
@@ -56,6 +57,7 @@ export default function App() {
   const [showExport, setShowExport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [data, setData] = useState<JsonObject>({});
+  const { widths: paneWidths, startResize, nudge } = useResizablePanes();
   const searchRef = useRef<HTMLInputElement>(null);
   const projects = useQuery({
     queryKey: ["projects"],
@@ -357,7 +359,15 @@ export default function App() {
           <FilePlus2 /> Add record
         </button>
       </section>
-      <main className="workspace">
+      <main
+        className="workspace"
+        style={
+          {
+            "--list-pane-width": `${paneWidths.left}px`,
+            "--details-pane-width": `${paneWidths.right}px`,
+          } as React.CSSProperties
+        }
+      >
         <aside className="list-pane">
           <div className="pane-title">
             <span>RECORDS</span>
@@ -372,6 +382,20 @@ export default function App() {
             }}
           />
         </aside>
+        <div
+          className="pane-resizer left-resizer"
+          role="separator"
+          aria-label="Resize record list"
+          aria-orientation="vertical"
+          tabIndex={0}
+          onPointerDown={(event) => startResize("left", event.clientX)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+              event.preventDefault();
+              nudge("left", event.key === "ArrowLeft" ? -20 : 20);
+            }
+          }}
+        />
         <section className="editor-pane">
           {record.data ? (
             <>
@@ -458,6 +482,20 @@ export default function App() {
             </div>
           )}
         </section>
+        <div
+          className="pane-resizer right-resizer"
+          role="separator"
+          aria-label="Resize details panel"
+          aria-orientation="vertical"
+          tabIndex={0}
+          onPointerDown={(event) => startResize("right", event.clientX)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+              event.preventDefault();
+              nudge("right", event.key === "ArrowLeft" ? -20 : 20);
+            }
+          }}
+        />
         <aside className="details-pane">
           <div className="tabs">
             <button
