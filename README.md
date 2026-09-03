@@ -16,6 +16,7 @@ Dataset Studio は、任意スキーマの JSONL データセットをローカ�
 - required field、messages、型整合性、duplicate identifier検証
 - user操作時だけ適用するmanual field sync
 - UTF-8 JSONLのstreaming downloadとatomic local export
+- `/management` での Project / split 保護、論理削除、物理削除、監査ログ
 - Django Adminによる内部状態確認
 
 ## Setup
@@ -36,6 +37,8 @@ uv run python manage.py runserver
 ```
 
 ブラウザで `http://127.0.0.1:8000` を開きます。Django development serverは既定でloopback interfaceだけにbindします。
+
+管理機能は `http://127.0.0.1:8000/management` で開けます（ローカル用途のため認証なし）。
 
 ## Admin
 

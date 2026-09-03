@@ -38,4 +38,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dataset_studio", "src/datasets_app"]
+packages = ["src/dataset_studio", "src/datasets_app", "src/dataset_guard"]
