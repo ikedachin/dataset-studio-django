@@ -18,7 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, jsonBody } from "./api/client";
+import { ApiError, api, jsonBody } from "./api/client";
 import { DynamicFieldEditor } from "./components/DynamicFieldEditor";
 import { ExportPanel } from "./components/ExportPanel";
 import { FieldFilter, FilterBuilder } from "./components/FilterBuilder";
@@ -232,32 +232,53 @@ export default function App() {
   const runSync = async () => {
     if (!record.data || !project.syncRules.length) return;
     await autosave.save();
+    await client.cancelQueries({ queryKey: ["record", record.data.id] });
     const current =
       client.getQueryData<RecordDetail>(["record", record.data.id]) ??
-      record.data;
-    const preview = await api<{
-      changes: Array<{ path: string; before: unknown; after: unknown }>;
-    }>(`/records/${current.id}/sync/`, {
-      method: "POST",
-      ...jsonBody({ version: current.version, apply: false }),
-    });
-    const summary = preview.changes
-      .map(
-        (change) =>
-          `${change.path}\nBefore: ${JSON.stringify(change.before)}\nAfter: ${JSON.stringify(change.after)}`,
-      )
-      .join("\n\n");
-    if (!window.confirm(`Apply these manual sync changes?\n\n${summary}`))
-      return;
-    const applied = await api<{ record: RecordDetail }>(
-      `/records/${current.id}/sync/`,
-      {
+      (await api<RecordDetail>(`/records/${record.data.id}/`));
+    try {
+      const preview = await api<{
+        changes: Array<{ path: string; before: unknown; after: unknown }>;
+      }>(`/records/${current.id}/sync/`, {
         method: "POST",
-        ...jsonBody({ version: current.version, apply: true }),
-      },
-    );
-    client.setQueryData(["record", applied.record.id], applied.record);
-    setData(applied.record.data);
+        ...jsonBody({ version: current.version, apply: false }),
+      });
+      if (!preview.changes.length) {
+        window.alert("Sync rules produced no changes.");
+        return;
+      }
+      const summary = preview.changes
+        .map(
+          (change) =>
+            `${change.path}\nBefore: ${JSON.stringify(change.before)}\nAfter: ${JSON.stringify(change.after)}`,
+        )
+        .join("\n\n");
+      if (!window.confirm(`Apply these manual sync changes?\n\n${summary}`))
+        return;
+      const applied = await api<{ record: RecordDetail }>(
+        `/records/${current.id}/sync/`,
+        {
+          method: "POST",
+          ...jsonBody({ version: current.version, apply: true }),
+        },
+      );
+      client.setQueryData(["record", applied.record.id], applied.record);
+      setData(applied.record.data);
+      await client.invalidateQueries({ queryKey: ["records", split?.id] });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        const latest = await api<RecordDetail>(`/records/${record.data.id}/`);
+        client.setQueryData(["record", latest.id], latest);
+        setData(structuredClone(latest.data));
+        window.alert(
+          "Sync apply failed because the record changed. Reloaded the latest data; please run Sync again.",
+        );
+        return;
+      }
+      window.alert(
+        error instanceof Error ? error.message : "Failed to apply manual sync.",
+      );
+    }
   };
   const currentIndex =
     (page.data?.items.findIndex((item) => item.id === recordId) ?? -1) + 1;

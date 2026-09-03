@@ -13,6 +13,7 @@ export function useAutosave(
   const latest = useRef(data);
   const version = useRef(record?.version);
   const dirty = useRef(false);
+  const recordVersion = record?.version;
   useEffect(() => {
     latest.current = data;
   }, [data]);
@@ -23,6 +24,11 @@ export function useAutosave(
     // save() advances versions; a version change must not clear edits made mid-save.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record?.id]);
+  useEffect(() => {
+    if (recordVersion === undefined || dirty.current) return;
+    version.current = recordVersion;
+    setState("saved");
+  }, [recordVersion]);
   const save = useCallback(async () => {
     if (!record || !dirty.current) return;
     window.clearTimeout(timer.current);

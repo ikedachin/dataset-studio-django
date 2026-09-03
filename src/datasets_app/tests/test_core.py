@@ -138,6 +138,19 @@ def test_diff_sync_and_validation(project, split):
 
 
 @pytest.mark.django_db
+def test_sync_creates_missing_message_targets(project, split):
+    project.sync_rules = [
+        {"source": "question", "target": "messages[0].content"},
+        {"template": "\n{{ answer }}", "target": "messages[1].content"},
+    ]
+    project.save()
+    data = {"question": "Q", "thinking": "T", "answer": "A"}
+    preview = preview_sync(data, project.sync_rules)
+    assert preview["data"]["messages"][0]["content"] == "Q"
+    assert preview["data"]["messages"][1]["content"] == "\nA"
+
+
+@pytest.mark.django_db
 def test_export_unicode_order_deleted_and_trailing_newline(split):
     make_record(split, 2, {"text": "二"})
     make_record(split, 1, {"text": "一"})
