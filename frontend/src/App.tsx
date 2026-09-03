@@ -452,6 +452,7 @@ export default function App() {
               <div className="editor-scroll">
                 <DynamicFieldEditor
                   value={data}
+                  layoutKey={project.id.toString()}
                   onChange={(value) => changeData(value as JsonObject)}
                 />
               </div>
