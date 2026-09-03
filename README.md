@@ -2,6 +2,13 @@
 
 Dataset Studio は、任意スキーマの JSONL データセットをローカルPCで安全に確認・検索・編集・検証・復元・エクスポートするための Django + React アプリです。元ファイルは直接変更せず、import 時のJSONと編集中のJSONをSQLiteへ分けて保存します。
 
+## License
+
+このアプリのソースコードは [MIT License](LICENSE) で公開します。
+Copyright (c) 2026 ikedachin.
+
+依存ライブラリには、それぞれのライセンスが適用されます。インポート・エクスポートするデータセットのライセンスは、アプリのライセンスとは別に扱います。
+
 ## Features
 
 - ブラウザupload、ローカルパス、Hugging Face Datasetからのstreaming import
