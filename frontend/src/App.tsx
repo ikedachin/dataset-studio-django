@@ -331,6 +331,9 @@ export default function App() {
             Import
           </button>
           {split && <button onClick={() => setShowExport(true)}>Export</button>}
+          <a className="button" href="/management">
+            Management
+          </a>
           <button aria-label="Settings" onClick={() => setShowSettings(true)}>
             <Settings />
           </button>

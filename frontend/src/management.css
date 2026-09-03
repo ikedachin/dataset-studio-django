@@ -1,0 +1,147 @@
+.management-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.management-nav {
+  margin-bottom: 4px;
+}
+
+.management-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+  margin: 10px 0 2px;
+}
+
+.summary-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  display: grid;
+  gap: 4px;
+}
+
+.summary-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.summary-item strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.management-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.management-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--panel);
+}
+
+.management-card.nested {
+  margin-top: 0;
+  border-style: dashed;
+}
+
+.management-sublist {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 8px;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pill.success {
+  color: var(--accent);
+}
+
+.status-pill.warning {
+  color: var(--amber);
+}
+
+.status-pill.danger {
+  color: var(--red);
+}
+
+.status-pill.neutral {
+  color: var(--muted);
+}
+
+.confirmation-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.confirmation-actions label {
+  font-size: 12px;
+}
+
+.confirmation-actions input {
+  display: block;
+  margin-top: 2px;
+  width: 100%;
+  max-width: none;
+}
+
+.confirmation-actions .button-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.management-logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.management-logs li {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+}
+
+@media (max-width: 1200px) {
+  .management-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.result-success {
+  color: var(--accent);
+}
+
+.result-rejected {
+  color: var(--red);
+}
