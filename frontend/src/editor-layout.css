@@ -18,6 +18,9 @@
 .field-tile[draggable="true"]:active {
   cursor: grabbing;
 }
+.field-tile[data-dragging="true"] {
+  opacity: 0.55;
+}
 .field-tile-locked {
   background: color-mix(in srgb, var(--surface) 88%, var(--border));
 }
@@ -33,6 +36,9 @@
 .field-tile-actions .icon-button:hover,
 .field-tile-actions .icon-button:focus-visible {
   opacity: 1;
+}
+.field-tile .field-label .icon-button {
+  margin-left: 0;
 }
 .field-tile-add {
   grid-column: 1 / -1;

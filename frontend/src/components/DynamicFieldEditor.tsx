@@ -293,10 +293,17 @@ function RootFieldLayout({
             data-field-key={key}
             key={key}
             draggable={!locked[key]}
-            onDragStart={() => setDragged(key)}
+            onDragStart={(event) => {
+              if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", key);
+              }
+              setDragged(key);
+            }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => move(key)}
             onDragEnd={() => setDragged(undefined)}
+            data-dragging={dragged === key ? "true" : undefined}
           >
             <div className="field-tile-actions">
               <button
