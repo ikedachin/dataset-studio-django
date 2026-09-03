@@ -1,10 +1,52 @@
+# Python environments and bytecode
 .venv/
+venv/
 __pycache__/
 *.py[cod]
+
+# Python packaging (frontend/dist is committed for Node.js-free use)
+/build/
+/dist/
+*.egg-info/
+
+# Tool caches and test coverage
 .pytest_cache/
 .ruff_cache/
-frontend/node_modules/
-frontend/.vite/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+/frontend/coverage/
+
+# Frontend dependencies and generated TypeScript files
+node_modules/
+.vite/
+*.tsbuildinfo
+/frontend/vite.config.js
+/frontend/vite.config.d.ts
+
+# Local environment settings (keep shareable templates)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Local database and SQLite sidecar files
 *.sqlite3
-test-100k.jsonl
-dataset-studio.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Generated sample dataset
+/test-100k.jsonl
+
+# Logs and local editor/OS files
+*.log
+.DS_Store
+._*
+Thumbs.db
+*.swp
+*.swo
+*~

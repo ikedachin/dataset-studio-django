@@ -1,4 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Database,
+  FolderOpen,
+  History,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { ApiError, api, jsonBody } from "./api/client";
 import type {
@@ -53,7 +61,9 @@ export default function ManagementApp() {
     },
     onError: (error) => {
       setMessage(
-        error instanceof ApiError ? error.message : "Failed to execute operation",
+        error instanceof ApiError
+          ? error.message
+          : "Failed to execute operation",
       );
     },
   });
@@ -63,141 +73,231 @@ export default function ManagementApp() {
   const projectCount = resources.data?.projects.length ?? 0;
   const deletedProjectCount = resources.data?.deletedProjects.length ?? 0;
   const splitCount =
-    resources.data?.projects.reduce((count, project) => count + project.splits.length, 0) ??
-    0;
+    resources.data?.projects.reduce(
+      (count, project) => count + project.splits.length,
+      0,
+    ) ?? 0;
   const deletedSplitCount = resources.data?.deletedSplits.length ?? 0;
   const protectedProjectCount =
-    resources.data?.projects.filter((project) => project.isProtected).length ?? 0;
+    resources.data?.projects.filter((project) => project.isProtected).length ??
+    0;
   const protectedSplitCount =
     resources.data?.projects.reduce(
       (count, project) =>
-        count + project.splits.filter((split) => split.isEffectivelyProtected).length,
+        count +
+        project.splits.filter((split) => split.isEffectivelyProtected).length,
       0,
     ) ?? 0;
   return (
     <main className="management-page">
-      <header>
-        <div className="management-nav">
-          <a className="button" href="/">
+      <header className="management-header">
+        <div className="management-topbar">
+          <a className="management-back" href="/">
+            <ArrowLeft aria-hidden="true" />
             Back to editor
           </a>
+          <span className="management-context">
+            <ShieldCheck aria-hidden="true" />
+            Dataset Guard
+          </span>
         </div>
-        <h1>Dataset Guard Management</h1>
-        <p>
-          Confirm using exact text before protect/unprotect/logical delete/physical
-          delete actions.
-        </p>
+        <div className="management-intro">
+          <p className="management-eyebrow">RESOURCE CONTROL</p>
+          <h1>Management</h1>
+          <p className="management-description">
+            Review protection and deletion status for every project and split.
+            Destructive actions unlock only after the exact confirmation text is
+            entered.
+          </p>
+        </div>
         <div className="management-summary">
-          <SummaryItem label="Active projects" value={projectCount} />
-          <SummaryItem label="Deleted projects" value={deletedProjectCount} />
-          <SummaryItem label="Active splits" value={splitCount} />
-          <SummaryItem label="Deleted splits" value={deletedSplitCount} />
-          <SummaryItem label="Protected projects" value={protectedProjectCount} />
-          <SummaryItem label="Protected splits" value={protectedSplitCount} />
+          <SummaryItem
+            label="Active projects"
+            value={projectCount}
+            tone="active"
+          />
+          <SummaryItem label="Active splits" value={splitCount} tone="active" />
+          <SummaryItem
+            label="Protected resources"
+            value={protectedProjectCount + protectedSplitCount}
+            detail={`${protectedProjectCount} projects · ${protectedSplitCount} splits`}
+            tone="protected"
+          />
+          <SummaryItem
+            label="Deleted resources"
+            value={deletedProjectCount + deletedSplitCount}
+            detail={`${deletedProjectCount} projects · ${deletedSplitCount} splits`}
+            tone="deleted"
+          />
         </div>
-        {message && <p className="muted">{message}</p>}
-      </header>
-      <div className="management-columns">
-        <section>
-          <h2>Active projects</h2>
-          {resources.data?.projects.length ? (
-            resources.data.projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onProjectAction={(action, confirmationText) =>
-                  mutation.mutate({
-                    kind: "projects",
-                    id: project.id,
-                    action,
-                    confirmationText,
-                  })
-                }
-                onSplitAction={(splitId, action, confirmationText) =>
-                  mutation.mutate({
-                    kind: "splits",
-                    id: splitId,
-                    action,
-                    confirmationText,
-                  })
-                }
-                disabled={mutation.isPending}
-              />
-            ))
-          ) : (
-            <p className="muted">No active projects.</p>
-          )}
-        </section>
-        <section>
-          <h2>Deleted projects</h2>
-          {resources.data?.deletedProjects.length ? (
-            resources.data.deletedProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onProjectAction={(action, confirmationText) =>
-                  mutation.mutate({
-                    kind: "projects",
-                    id: project.id,
-                    action,
-                    confirmationText,
-                  })
-                }
-                onSplitAction={(splitId, action, confirmationText) =>
-                  mutation.mutate({
-                    kind: "splits",
-                    id: splitId,
-                    action,
-                    confirmationText,
-                  })
-                }
-                disabled={mutation.isPending}
-                deleted
-              />
-            ))
-          ) : (
-            <p className="muted">No deleted projects.</p>
-          )}
-        </section>
-      </div>
-      <section>
-        <h2>Deleted splits (project still active)</h2>
-        {resources.data?.deletedSplits.length ? (
-          <div className="management-sublist">
-            {resources.data.deletedSplits.map((split) => (
-              <SplitCard
-                key={split.id}
-                split={split}
-                onAction={(splitId, action, confirmationText) =>
-                  mutation.mutate({
-                    kind: "splits",
-                    id: splitId,
-                    action,
-                    confirmationText,
-                  })
-                }
-                disabled={mutation.isPending}
-                deleted
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="muted">No deleted splits.</p>
+        {message && (
+          <p className="management-message" role="status">
+            {message}
+          </p>
         )}
-      </section>
-      <section>
-        <h2>Audit logs (latest 100)</h2>
+      </header>
+      <div className="management-resource-layout">
+        <section className="management-section management-primary-section">
+          <div className="management-section-heading">
+            <div>
+              <span className="management-section-icon">
+                <FolderOpen aria-hidden="true" />
+              </span>
+              <div>
+                <h2>Active projects</h2>
+                <p>Manage project-level and inherited split protection.</p>
+              </div>
+            </div>
+            <span className="management-count">{projectCount}</span>
+          </div>
+          {resources.data?.projects.length ? (
+            <div className="management-card-list">
+              {resources.data.projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onProjectAction={(action, confirmationText) =>
+                    mutation.mutate({
+                      kind: "projects",
+                      id: project.id,
+                      action,
+                      confirmationText,
+                    })
+                  }
+                  onSplitAction={(splitId, action, confirmationText) =>
+                    mutation.mutate({
+                      kind: "splits",
+                      id: splitId,
+                      action,
+                      confirmationText,
+                    })
+                  }
+                  disabled={mutation.isPending}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No active projects.</EmptyState>
+          )}
+        </section>
+        <aside className="management-recovery-column">
+          <section className="management-section">
+            <div className="management-section-heading compact">
+              <div>
+                <span className="management-section-icon danger">
+                  <Trash2 aria-hidden="true" />
+                </span>
+                <div>
+                  <h2>Deleted projects</h2>
+                  <p>Resources awaiting permanent deletion.</p>
+                </div>
+              </div>
+              <span className="management-count">{deletedProjectCount}</span>
+            </div>
+            {resources.data?.deletedProjects.length ? (
+              <div className="management-card-list">
+                {resources.data.deletedProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onProjectAction={(action, confirmationText) =>
+                      mutation.mutate({
+                        kind: "projects",
+                        id: project.id,
+                        action,
+                        confirmationText,
+                      })
+                    }
+                    onSplitAction={(splitId, action, confirmationText) =>
+                      mutation.mutate({
+                        kind: "splits",
+                        id: splitId,
+                        action,
+                        confirmationText,
+                      })
+                    }
+                    disabled={mutation.isPending}
+                    deleted
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState>No deleted projects.</EmptyState>
+            )}
+          </section>
+          <section className="management-section">
+            <div className="management-section-heading compact">
+              <div>
+                <span className="management-section-icon danger">
+                  <Database aria-hidden="true" />
+                </span>
+                <div>
+                  <h2>Deleted splits</h2>
+                  <p>Deleted splits whose project is still active.</p>
+                </div>
+              </div>
+              <span className="management-count">{deletedSplitCount}</span>
+            </div>
+            {resources.data?.deletedSplits.length ? (
+              <div className="management-card-list">
+                {resources.data.deletedSplits.map((split) => (
+                  <SplitCard
+                    key={split.id}
+                    split={split}
+                    onAction={(splitId, action, confirmationText) =>
+                      mutation.mutate({
+                        kind: "splits",
+                        id: splitId,
+                        action,
+                        confirmationText,
+                      })
+                    }
+                    disabled={mutation.isPending}
+                    deleted
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState>No deleted splits.</EmptyState>
+            )}
+          </section>
+        </aside>
+      </div>
+      <section className="management-section management-audit-section">
+        <div className="management-section-heading">
+          <div>
+            <span className="management-section-icon">
+              <History aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Audit logs</h2>
+              <p>The latest 100 resource operations.</p>
+            </div>
+          </div>
+          <span className="management-count">{logs.data?.length ?? 0}</span>
+        </div>
         <ul className="management-logs">
           {logs.data?.map((log) => (
             <li key={log.id}>
-              <strong>{log.action}</strong> {log.targetType}:{log.targetId}{" "}
-              <span className={`result-${log.result}`}>{log.result}</span>{" "}
-              <small>
-                {log.actor} @ {new Date(log.executedAt).toLocaleString()}
-              </small>
+              <span className={`audit-result result-${log.result}`}>
+                {log.result}
+              </span>
+              <div className="audit-operation">
+                <strong>{log.action.replace("_", " ")}</strong>
+                <code>
+                  {log.targetType}:{log.targetId}
+                </code>
+              </div>
+              <div className="audit-meta">
+                <span>{log.actor}</span>
+                <time dateTime={log.executedAt}>
+                  {new Date(log.executedAt).toLocaleString()}
+                </time>
+              </div>
             </li>
           ))}
         </ul>
+        {!logs.data?.length && <EmptyState>No audit activity yet.</EmptyState>}
       </section>
     </main>
   );
@@ -221,19 +321,26 @@ function ProjectCard({
   deleted?: boolean;
 }) {
   return (
-    <article className="management-card" data-testid={`project-card-${project.id}`}>
-      <h3>
-        {project.name} <small>({project.guardId})</small>
-      </h3>
-      <div className="status-row">
-        <StatusPill
-          label={project.isProtected ? "protected" : "unprotected"}
-          tone={project.isProtected ? "warning" : "success"}
-        />
-        <StatusPill
-          label={project.deletedAt ? "logically deleted" : "active"}
-          tone={project.deletedAt ? "danger" : "success"}
-        />
+    <article
+      className="management-card"
+      data-testid={`project-card-${project.id}`}
+    >
+      <div className="management-card-header">
+        <div>
+          <span className="resource-kind">PROJECT</span>
+          <h3>{project.name}</h3>
+          <code>{project.guardId}</code>
+        </div>
+        <div className="status-row">
+          <StatusPill
+            label={project.isProtected ? "protected" : "unprotected"}
+            tone={project.isProtected ? "warning" : "success"}
+          />
+          <StatusPill
+            label={project.deletedAt ? "logically deleted" : "active"}
+            tone={project.deletedAt ? "danger" : "success"}
+          />
+        </div>
       </div>
       <ConfirmationActions
         expected={project.guardId}
@@ -278,22 +385,29 @@ function SplitCard({
   deleted?: boolean;
 }) {
   return (
-    <article className="management-card nested" data-testid={`split-card-${split.id}`}>
-      <h4>
-        Split: {split.name} <small>({split.projectName})</small>
-      </h4>
-      <div className="status-row">
-        <StatusPill
-          label={split.isEffectivelyProtected ? "protected" : "unprotected"}
-          tone={split.isEffectivelyProtected ? "warning" : "success"}
-        />
-        {split.isInheritedProtected && (
-          <StatusPill label="inherited protection" tone="neutral" />
-        )}
-        <StatusPill
-          label={split.deletedAt ? "logically deleted" : "active"}
-          tone={split.deletedAt ? "danger" : "success"}
-        />
+    <article
+      className="management-card nested"
+      data-testid={`split-card-${split.id}`}
+    >
+      <div className="management-card-header split-header">
+        <div>
+          <span className="resource-kind">SPLIT</span>
+          <h4>{split.name}</h4>
+          <span className="resource-parent">Project: {split.projectName}</span>
+        </div>
+        <div className="status-row">
+          <StatusPill
+            label={split.isEffectivelyProtected ? "protected" : "unprotected"}
+            tone={split.isEffectivelyProtected ? "warning" : "success"}
+          />
+          {split.isInheritedProtected && (
+            <StatusPill label="inherited protection" tone="neutral" />
+          )}
+          <StatusPill
+            label={split.deletedAt ? "logically deleted" : "active"}
+            tone={split.deletedAt ? "danger" : "success"}
+          />
+        </div>
       </div>
       <ConfirmationActions
         expected={split.name}
@@ -327,7 +441,8 @@ function ConfirmationActions({
   return (
     <div className="confirmation-actions">
       <label>
-        Confirm text: <code>{expected}</code>
+        <span>Confirmation text</span>
+        <code>{expected}</code>
         <input
           value={value}
           onChange={(event) => setValue(event.target.value)}
@@ -338,6 +453,7 @@ function ConfirmationActions({
         {actions.map((action) => (
           <button
             key={action}
+            className={`management-action action-${action}`}
             disabled={disabled || !valid}
             onClick={() => onAction(action, value)}
           >
@@ -349,13 +465,28 @@ function ConfirmationActions({
   );
 }
 
-function SummaryItem({ label, value }: { label: string; value: number }) {
+function SummaryItem({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: number;
+  detail?: string;
+  tone: "active" | "protected" | "deleted";
+}) {
   return (
-    <div className="summary-item">
-      <span>{label}</span>
+    <div className={`summary-item ${tone}`}>
+      <span className="summary-label">{label}</span>
       <strong>{value.toLocaleString()}</strong>
+      {detail && <small>{detail}</small>}
     </div>
   );
+}
+
+function EmptyState({ children }: { children: string }) {
+  return <p className="management-empty">{children}</p>;
 }
 
 function StatusPill({
