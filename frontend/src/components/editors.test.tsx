@@ -24,6 +24,23 @@ describe("dynamic editors", () => {
     });
   });
 
+  it("uses resizable textareas for all string fields", () => {
+    const { container } = render(
+      <DynamicFieldEditor
+        value={{ short: "one line", long: "line one\nline two" }}
+        onChange={vi.fn()}
+      />,
+    );
+    const textareas = Array.from(
+      container.querySelectorAll<HTMLTextAreaElement>(".field-tile textarea"),
+    );
+    expect(textareas).toHaveLength(2);
+    expect(textareas.every((textarea) => textarea.tagName === "TEXTAREA")).toBe(
+      true,
+    );
+    expect(textareas[1]).toHaveAttribute("wrap", "soft");
+  });
+
   it("renders root record fields as movable tiles", () => {
     const { container, unmount } = render(
       <DynamicFieldEditor
@@ -37,7 +54,7 @@ describe("dynamic editors", () => {
       />,
     );
     expect(
-      container.querySelectorAll(".root-field-layout > .field-tile"),
+      container.querySelectorAll(".root-field-layout .field-tile"),
     ).toHaveLength(5);
     expect(container.querySelector('[data-field-key="messages"]')).toHaveAttribute(
       "draggable",
@@ -154,7 +171,7 @@ describe("detail panels", () => {
       />,
     );
     expect(screen.getByText("$.answer")).toBeInTheDocument();
-    expect(screen.getByText(/old/)).toBeInTheDocument();
+    expect(screen.getByText(/"old"/)).toBeInTheDocument();
   });
   it("shows validation issues and empty success", () => {
     const { rerender } = render(

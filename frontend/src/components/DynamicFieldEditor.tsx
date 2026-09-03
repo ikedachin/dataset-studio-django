@@ -50,20 +50,15 @@ export function DynamicFieldEditor({
     </div>
   );
   if (typeof value === "string") {
-    const long = value.includes("\n") || value.length > 120;
     return (
       <div className="field">
         {header}
-        {long ? (
-          <PersistentTextarea
-            storageKey={path || label || "record"}
-            value={value}
-            rows={Math.min(12, Math.max(3, value.split("\n").length + 1))}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        ) : (
-          <input value={value} onChange={(e) => onChange(e.target.value)} />
-        )}
+        <PersistentTextarea
+          storageKey={path || label || "record"}
+          value={value}
+          rows={1}
+          onChange={(e) => onChange(e.target.value)}
+        />
       </div>
     );
   }
@@ -282,9 +277,7 @@ function RootFieldLayout({
   const byKey = new Map<string, [string, JsonValue]>(
     entries.map((entry) => [entry[0], entry]),
   );
-  return (
-    <div className="root-field-layout" aria-label="Record fields">
-      {order.map((key) => {
+  const renderTile = (key: string) => {
         const entry = byKey.get(key);
         if (!entry) return null;
         return (
@@ -293,10 +286,17 @@ function RootFieldLayout({
             data-field-key={key}
             key={key}
             draggable={!locked[key]}
-            onDragStart={() => setDragged(key)}
+            onDragStart={(event) => {
+              if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", key);
+              }
+              setDragged(key);
+            }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => move(key)}
             onDragEnd={() => setDragged(undefined)}
+            data-dragging={dragged === key ? "true" : undefined}
           >
             <div className="field-tile-actions">
               <button
@@ -314,7 +314,18 @@ function RootFieldLayout({
             {renderEntry(entry)}
           </section>
         );
-      })}
+  };
+  const rightKeys = new Set(
+    order.filter((key) => key.toLowerCase() === "messages"),
+  );
+  return (
+    <div className="root-field-layout" aria-label="Record fields">
+      <div className="field-tile-column">
+        {order.filter((key) => !rightKeys.has(key)).map(renderTile)}
+      </div>
+      <div className="field-tile-column">
+        {order.filter((key) => rightKeys.has(key)).map(renderTile)}
+      </div>
       <section className="field-tile field-tile-add">
         <AddField object={object} onChange={onChange} />
       </section>

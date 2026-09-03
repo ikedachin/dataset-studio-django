@@ -4,6 +4,12 @@
   gap: 18px;
   align-items: start;
 }
+.field-tile-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
 .field-tile {
   position: relative;
   min-width: 0;
@@ -17,6 +23,9 @@
 }
 .field-tile[draggable="true"]:active {
   cursor: grabbing;
+}
+.field-tile[data-dragging="true"] {
+  opacity: 0.55;
 }
 .field-tile-locked {
   background: color-mix(in srgb, var(--surface) 88%, var(--border));
@@ -34,22 +43,11 @@
 .field-tile-actions .icon-button:focus-visible {
   opacity: 1;
 }
+.field-tile .field-label .icon-button {
+  margin-left: 0;
+}
 .field-tile-add {
   grid-column: 1 / -1;
-}
-.field-tile[data-field-key="question"],
-.field-tile[data-field-key="thinking"],
-.field-tile[data-field-key="answer"],
-.field-tile[data-field-key="prompt"],
-.field-tile[data-field-key="response"],
-.field-tile[data-field-key="instruction"],
-.field-tile[data-field-key="input"],
-.field-tile[data-field-key="output"] {
-  grid-column: 1;
-}
-.field-tile[data-field-key="messages"] {
-  grid-column: 2;
-  grid-row: 1;
 }
 .field-column {
   min-width: 0;
@@ -59,16 +57,16 @@
   border-right: 1px solid var(--border);
 }
 .root-field-layout .field {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 .root-field-layout textarea {
   resize: vertical;
-  min-height: 170px;
+  min-height: 48px;
   max-height: 70vh;
 }
 .message-card textarea {
   resize: vertical;
-  min-height: 220px;
+  min-height: 48px;
   max-height: 70vh;
 }
 textarea {
@@ -122,9 +120,8 @@ textarea {
   .root-field-layout {
     grid-template-columns: 1fr;
   }
-  .field-tile[data-field-key="messages"] {
-    grid-column: 1;
-    grid-row: auto;
+  .field-tile-column {
+    gap: 0;
   }
   .field-column-primary {
     padding-right: 0;
