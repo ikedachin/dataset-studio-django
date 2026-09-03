@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronRight, Lock, Plus, Trash2, Unlock } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ReactElement } from "react";
 import type { JsonObject, JsonValue } from "../types";
 import { MessageEditor, isMessages } from "./MessageEditor";
 import { PersistentTextarea } from "./PersistentTextarea";
@@ -22,12 +23,14 @@ export function DynamicFieldEditor({
   onChange,
   onDelete,
   path = "",
+  layoutKey,
 }: {
   label?: string;
   value: JsonValue;
   onChange: (value: JsonValue) => void;
   onDelete?: () => void;
   path?: string;
+  layoutKey?: string;
 }) {
   const kind = kindOf(value);
   const [open, setOpen] = useState(true);
@@ -185,18 +188,22 @@ export function DynamicFieldEditor({
       primary = entries.slice(0, midpoint);
       secondary = entries.slice(midpoint);
     }
+    const preferred = [
+      ...primary,
+      ...secondary.filter(([key]) => key.toLowerCase() === "messages"),
+      ...secondary.filter(([key]) => key.toLowerCase() !== "messages"),
+    ];
     return (
-      <div className="root-field-layout">
-        <section className="field-column field-column-primary">
-          {primary.map(renderEntry)}
-        </section>
-        <section className="field-column field-column-secondary">
-          {secondary.map(renderEntry)}
-          <AddField object={object} onChange={onChange} />
-        </section>
-      </div>
+      <RootFieldLayout
+        entries={preferred}
+        object={object}
+        onChange={onChange}
+        layoutKey={layoutKey}
+        renderEntry={renderEntry}
+      />
     );
   }
+
   return (
     <div className="field group-field">
       {header}
@@ -210,6 +217,107 @@ export function DynamicFieldEditor({
           <AddField object={object} onChange={onChange} />
         </div>
       )}
+    </div>
+  );
+}
+
+function RootFieldLayout({
+  entries,
+  object,
+  onChange,
+  layoutKey = "default",
+  renderEntry,
+}: {
+  entries: Array<[string, JsonValue]>;
+  object: JsonObject;
+  onChange: (value: JsonValue) => void;
+  layoutKey?: string;
+  renderEntry: (entry: [string, JsonValue]) => ReactElement;
+}) {
+  const storageKey = `dataset-studio:field-layout:${layoutKey}`;
+  const entryKeys = entries.map(([key]) => key).join("\0");
+  const [order, setOrder] = useState(() => entries.map(([key]) => key));
+  const [locked, setLocked] = useState<Record<string, boolean>>({});
+  const [dragged, setDragged] = useState<string>();
+
+  useEffect(() => {
+    const defaultOrder = entryKeys ? entryKeys.split("\0") : [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}") as {
+        order?: unknown;
+        locked?: unknown;
+      };
+      const savedOrder = Array.isArray(saved.order)
+        ? saved.order.filter((key): key is string => typeof key === "string")
+        : [];
+      setOrder([
+        ...savedOrder.filter((key) => defaultOrder.includes(key)),
+        ...defaultOrder.filter((key) => !savedOrder.includes(key)),
+      ]);
+      setLocked(
+        saved.locked && typeof saved.locked === "object"
+          ? (saved.locked as Record<string, boolean>)
+          : {},
+      );
+    } catch {
+      setOrder(defaultOrder);
+      setLocked({});
+    }
+  }, [storageKey, entryKeys]);
+
+  const persist = (nextOrder: string[], nextLocked: Record<string, boolean>) => {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ order: nextOrder, locked: nextLocked }),
+    );
+  };
+  const move = (target: string) => {
+    if (!dragged || dragged === target || locked[dragged] || locked[target]) return;
+    const next = [...order];
+    next.splice(next.indexOf(dragged), 1);
+    next.splice(next.indexOf(target), 0, dragged);
+    setOrder(next);
+    persist(next, locked);
+  };
+  const byKey = new Map<string, [string, JsonValue]>(
+    entries.map((entry) => [entry[0], entry]),
+  );
+  return (
+    <div className="root-field-layout" aria-label="Record fields">
+      {order.map((key) => {
+        const entry = byKey.get(key);
+        if (!entry) return null;
+        return (
+          <section
+            className={`field-tile${locked[key] ? " field-tile-locked" : ""}`}
+            data-field-key={key}
+            key={key}
+            draggable={!locked[key]}
+            onDragStart={() => setDragged(key)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={() => move(key)}
+            onDragEnd={() => setDragged(undefined)}
+          >
+            <div className="field-tile-actions">
+              <button
+                className="icon-button"
+                aria-label={`${locked[key] ? "Unlock" : "Lock"} ${key}`}
+                onClick={() => {
+                  const next = { ...locked, [key]: !locked[key] };
+                  setLocked(next);
+                  persist(order, next);
+                }}
+              >
+                {locked[key] ? <Lock size={13} /> : <Unlock size={13} />}
+              </button>
+            </div>
+            {renderEntry(entry)}
+          </section>
+        );
+      })}
+      <section className="field-tile field-tile-add">
+        <AddField object={object} onChange={onChange} />
+      </section>
     </div>
   );
 }

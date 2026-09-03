@@ -24,22 +24,55 @@ describe("dynamic editors", () => {
     });
   });
 
-  it("splits root record fields into two columns", () => {
-    const { container } = render(
+  it("renders root record fields as movable tiles", () => {
+    const { container, unmount } = render(
       <DynamicFieldEditor
-        value={{ question: "Q", answer: "A", metadata: { source: "x" } }}
+        value={{
+          question: "Q",
+          thinking: "T",
+          answer: "A",
+          messages: [{ role: "user", content: "M" }],
+        }}
         onChange={vi.fn()}
       />,
     );
     expect(
-      container.querySelectorAll(".root-field-layout > .field-column"),
-    ).toHaveLength(2);
-    expect(container.querySelector(".field-column-primary")).toHaveTextContent(
-      "question",
+      container.querySelectorAll(".root-field-layout > .field-tile"),
+    ).toHaveLength(5);
+    expect(container.querySelector('[data-field-key="messages"]')).toHaveAttribute(
+      "draggable",
+      "true",
+    );
+    unmount();
+  });
+
+  it("persists tile locks and order", () => {
+    window.localStorage.clear();
+    const { container, unmount } = render(
+      <DynamicFieldEditor value={{ question: "Q", answer: "A" }} onChange={vi.fn()} />,
+    );
+    fireEvent.dragStart(container.querySelector('[data-field-key="answer"]')!);
+    fireEvent.drop(container.querySelector('[data-field-key="question"]')!, {
+      dataTransfer: {},
+    });
+    fireEvent.click(
+      container.querySelector('[aria-label="Lock question"]')!,
+    );
+    fireEvent.drop(
+      container.querySelector('[data-field-key="answer"]')!,
+      { dataTransfer: {} },
+    );
+    unmount();
+    const restored = render(
+      <DynamicFieldEditor value={{ question: "Q", answer: "A" }} onChange={vi.fn()} />,
     );
     expect(
-      container.querySelector(".field-column-secondary"),
-    ).toHaveTextContent("metadata");
+      restored.container.querySelector('[aria-label="Unlock question"]'),
+    ).toBeInTheDocument();
+    expect(
+      restored.container.querySelector(".field-tile")?.getAttribute("data-field-key"),
+    ).toBe("answer");
+    restored.unmount();
   });
 
   it("restores a manually resized textarea height", () => {
