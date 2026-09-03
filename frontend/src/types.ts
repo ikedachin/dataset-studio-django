@@ -8,7 +8,7 @@ export interface Project {
   syncRules: Array<Record<string, string>>; identifierFields: string[]
   validationSettings: Record<string, JsonValue>
 }
-export interface Split { id: number; name: string; position: number; recordCount: number }
+export interface Split { id: number; name: string; datasetName: string; position: number; recordCount: number }
 export interface RecordSummary { id: number; position: number; status: string; preview: string; validationErrors: number; validationWarnings: number }
 export interface RecordDetail extends RecordSummary { splitId: number; original: JsonObject; data: JsonObject; isNew: boolean; isDeleted: boolean; version: number; updatedAt: string }
 export interface RecordPage { items: RecordSummary[]; total: number; limit: number; offset: number }
@@ -16,6 +16,7 @@ export interface DiffItem { type: 'added' | 'removed' | 'modified'; path: string
 export interface ValidationIssue { severity: 'warning' | 'error'; code: string; path: string; message: string }
 
 export interface ManagedSplit {
+  datasetName: string
   id: number
   name: string
   projectId: number

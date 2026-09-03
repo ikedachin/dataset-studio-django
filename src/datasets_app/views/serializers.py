@@ -17,7 +17,7 @@ def project_data(project: Project) -> dict:
 
 
 def split_data(split: DatasetSplit) -> dict:
-    return {"id": split.pk, "name": split.name, "position": split.position, "recordCount": split.record_count}
+    return {"id": split.pk, "name": split.name, "datasetName": split.dataset_name, "position": split.position, "recordCount": split.record_count}
 
 
 def record_summary(record: DatasetRecord) -> dict:
@@ -53,6 +53,7 @@ def job_data(job: ImportJob) -> dict:
     return {
         "id": job.pk,
         "projectId": job.project_id,
+        "datasetName": job.source_config.get("dataset_name"),
         "status": job.status,
         "current": job.progress_current,
         "total": job.progress_total,

@@ -392,7 +392,7 @@ function SplitCard({
       <div className="management-card-header split-header">
         <div>
           <span className="resource-kind">SPLIT</span>
-          <h4>{split.name}</h4>
+          <h4>{split.datasetName} / {split.name}</h4>
           <span className="resource-parent">Project: {split.projectName}</span>
         </div>
         <div className="status-row">

@@ -1,6 +1,6 @@
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class ProjectCreate(BaseModel):
@@ -25,18 +25,45 @@ class RecordCreate(BaseModel):
 
 
 class LocalImport(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     project_id: int
     path: str
-    split_name: str = "train"
+    split_name: str = Field(default="train", min_length=1, max_length=120)
+    dataset_name: str | None = Field(default=None, min_length=1, max_length=255)
 
 
-class HuggingFaceImport(BaseModel):
+class UploadImport(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     project_id: int
-    repository: str
+    split_name: str = Field(default="train", min_length=1, max_length=120)
+    dataset_name: str | None = Field(default=None, min_length=1, max_length=255)
+
+
+SplitName = Annotated[str, Field(min_length=1, max_length=120)]
+
+
+class HuggingFaceInfo(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    repository: str = Field(min_length=1, max_length=200, pattern=r"^[\w.-]+(?:/[\w.-]+)?$")
     revision: str | None = None
     configuration: str | None = None
-    split: str = "train"
-    split_name: str | None = None
+    hf_token: SecretStr | None = Field(default=None, exclude=True, repr=False)
+
+
+class HuggingFaceImport(HuggingFaceInfo):
+    project_id: int
+    dataset_name: str | None = Field(default=None, min_length=1, max_length=255)
+    split: SplitName = "train"
+    split_name: SplitName | None = None
+
+
+class HuggingFaceBatchImport(HuggingFaceInfo):
+    project_id: int
+    dataset_name: str | None = Field(default=None, min_length=1, max_length=255)
+    splits: list[SplitName] = Field(min_length=1)
 
 
 class ExportPath(BaseModel):

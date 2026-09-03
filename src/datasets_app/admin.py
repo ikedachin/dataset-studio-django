@@ -13,9 +13,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(DatasetSplit)
 class DatasetSplitAdmin(admin.ModelAdmin):
-    list_display = ("name", "project", "record_count", "position")
+    list_display = ("name", "dataset_name", "project", "record_count", "position")
     list_filter = ("project",)
-    search_fields = ("name", "project__name")
+    search_fields = ("name", "dataset_name", "project__name")
 
 
 @admin.register(DatasetRecord)

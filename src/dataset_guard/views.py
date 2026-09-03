@@ -23,6 +23,7 @@ def _serialize_split(split: DatasetSplit) -> dict:
     return {
         "id": split.pk,
         "name": split.name,
+        "datasetName": split.dataset_name,
         "projectId": split.project_id,
         "projectName": split.project.name,
         "isProtected": split.is_protected,

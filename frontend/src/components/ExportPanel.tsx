@@ -29,7 +29,7 @@ export function ExportPanel({
       <section className="modal export-modal">
         <header>
           <div>
-            <small>EXPORT · {split.name.toUpperCase()}</small>
+            <small>EXPORT · {split.datasetName} / {split.name}</small>
             <h2>Export edited JSONL</h2>
           </div>
           <button className="icon-button" onClick={onClose}>

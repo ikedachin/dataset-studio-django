@@ -18,6 +18,7 @@ urlpatterns = [
     path("import/upload/", imports.import_upload),
     path("import/local/", imports.import_local),
     path("import/huggingface/", imports.import_huggingface),
+    path("import/huggingface/batch/", imports.import_huggingface_batch),
     path("huggingface/info/", imports.huggingface_info),
     path("jobs/<int:job_id>/", imports.job_detail),
     path("export/download/", exports.export_download),

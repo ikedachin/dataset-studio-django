@@ -29,6 +29,7 @@ class Project(models.Model):
 
 class DatasetSplit(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="splits")
+    dataset_name = models.CharField(max_length=255, default="default")
     name = models.CharField(max_length=120)
     position = models.PositiveIntegerField(default=0)
     record_count = models.PositiveIntegerField(default=0)
@@ -37,10 +38,10 @@ class DatasetSplit(models.Model):
 
     class Meta:
         ordering = ["position", "id"]
-        constraints = [models.UniqueConstraint(fields=["project", "name"], name="unique_split")]
+        constraints = [models.UniqueConstraint(fields=["project", "dataset_name", "name"], name="unique_dataset_split")]
 
     def __str__(self) -> str:
-        return f"{self.project}: {self.name}"
+        return f"{self.project}: {self.dataset_name} / {self.name}"
 
 
 class DatasetRecord(models.Model):

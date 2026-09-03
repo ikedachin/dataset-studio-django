@@ -36,7 +36,7 @@ def api_errors(view: Callable[..., JsonResponse]):
         try:
             return view(*args, **kwargs)
         except ValidationError as exc:
-            return error("VALIDATION_ERROR", "Request validation failed", 422, exc.errors(include_url=False))
+            return error("VALIDATION_ERROR", "Request validation failed", 422, exc.errors(include_url=False, include_input=False, include_context=False))
         except ValueError as exc:
             return error("INVALID_REQUEST", str(exc), 400)
     return wrapper

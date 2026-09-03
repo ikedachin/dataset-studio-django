@@ -320,7 +320,7 @@ export default function App() {
                 setRecordId(undefined);
               }}
             >
-              {s.name}
+              {s.datasetName} / {s.name}
               <span>{s.recordCount.toLocaleString()}</span>
             </button>
           ))}
@@ -579,9 +579,14 @@ export default function App() {
       {showImport && (
         <ImportPanel
           project={project}
-          onClose={() => setShowImport(false)}
+          onClose={() => {
+            void client.invalidateQueries({ queryKey: ["splits", project.id] });
+            void client.invalidateQueries({ queryKey: ["projects"] });
+            setShowImport(false);
+          }}
           onComplete={() => {
             void client.invalidateQueries({ queryKey: ["splits", project.id] });
+            void client.invalidateQueries({ queryKey: ["projects"] });
             setShowImport(false);
           }}
         />
