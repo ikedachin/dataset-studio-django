@@ -58,9 +58,33 @@ def set_path(data: Any, path: str, value: Any) -> None:
     if not parts:
         raise ValueError("Path cannot be empty")
     current = data
-    for part in parts[:-1]:
+    for index, part in enumerate(parts[:-1]):
+        next_part = parts[index + 1]
+        placeholder: Any = [] if isinstance(next_part, int) else {}
+        if isinstance(part, int):
+            if not isinstance(current, list):
+                raise ValueError("Invalid JSON path")
+            while len(current) <= part:
+                current.append(None)
+            if not isinstance(current[part], (dict, list)):
+                current[part] = placeholder
+        else:
+            if not isinstance(current, dict):
+                raise ValueError("Invalid JSON path")
+            if not isinstance(current.get(part), (dict, list)):
+                current[part] = placeholder
         current = current[part]
-    current[parts[-1]] = value
+    last = parts[-1]
+    if isinstance(last, int):
+        if not isinstance(current, list):
+            raise ValueError("Invalid JSON path")
+        while len(current) <= last:
+            current.append(None)
+        current[last] = value
+    else:
+        if not isinstance(current, dict):
+            raise ValueError("Invalid JSON path")
+        current[last] = value
 
 
 def json_type(value: Any) -> str:
