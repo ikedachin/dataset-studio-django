@@ -25,6 +25,7 @@ Python 3.11以上と [uv](https://docs.astral.sh/uv/) を用意します。
 
 ```bash
 uv sync
+uv run python manage.py makemigrations
 uv run python manage.py migrate
 ```
 
