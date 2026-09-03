@@ -54,7 +54,7 @@ describe("dynamic editors", () => {
       />,
     );
     expect(
-      container.querySelectorAll(".root-field-layout > .field-tile"),
+      container.querySelectorAll(".root-field-layout .field-tile"),
     ).toHaveLength(5);
     expect(container.querySelector('[data-field-key="messages"]')).toHaveAttribute(
       "draggable",

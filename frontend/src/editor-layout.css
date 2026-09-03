@@ -4,6 +4,12 @@
   gap: 18px;
   align-items: start;
 }
+.field-tile-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
 .field-tile {
   position: relative;
   min-width: 0;
@@ -42,20 +48,6 @@
 }
 .field-tile-add {
   grid-column: 1 / -1;
-}
-.field-tile[data-field-key="question"],
-.field-tile[data-field-key="thinking"],
-.field-tile[data-field-key="answer"],
-.field-tile[data-field-key="prompt"],
-.field-tile[data-field-key="response"],
-.field-tile[data-field-key="instruction"],
-.field-tile[data-field-key="input"],
-.field-tile[data-field-key="output"] {
-  grid-column: 1;
-}
-.field-tile[data-field-key="messages"] {
-  grid-column: 2;
-  grid-row: 1;
 }
 .field-column {
   min-width: 0;
@@ -128,9 +120,8 @@ textarea {
   .root-field-layout {
     grid-template-columns: 1fr;
   }
-  .field-tile[data-field-key="messages"] {
-    grid-column: 1;
-    grid-row: auto;
+  .field-tile-column {
+    gap: 0;
   }
   .field-column-primary {
     padding-right: 0;

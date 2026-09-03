@@ -277,9 +277,7 @@ function RootFieldLayout({
   const byKey = new Map<string, [string, JsonValue]>(
     entries.map((entry) => [entry[0], entry]),
   );
-  return (
-    <div className="root-field-layout" aria-label="Record fields">
-      {order.map((key) => {
+  const renderTile = (key: string) => {
         const entry = byKey.get(key);
         if (!entry) return null;
         return (
@@ -316,7 +314,18 @@ function RootFieldLayout({
             {renderEntry(entry)}
           </section>
         );
-      })}
+  };
+  const rightKeys = new Set(
+    order.filter((key) => key.toLowerCase() === "messages"),
+  );
+  return (
+    <div className="root-field-layout" aria-label="Record fields">
+      <div className="field-tile-column">
+        {order.filter((key) => !rightKeys.has(key)).map(renderTile)}
+      </div>
+      <div className="field-tile-column">
+        {order.filter((key) => rightKeys.has(key)).map(renderTile)}
+      </div>
       <section className="field-tile field-tile-add">
         <AddField object={object} onChange={onChange} />
       </section>
