@@ -65,16 +65,16 @@
   border-right: 1px solid var(--border);
 }
 .root-field-layout .field {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 .root-field-layout textarea {
   resize: vertical;
-  min-height: 170px;
+  min-height: 48px;
   max-height: 70vh;
 }
 .message-card textarea {
   resize: vertical;
-  min-height: 220px;
+  min-height: 48px;
   max-height: 70vh;
 }
 textarea {

@@ -1,4 +1,8 @@
-import { useEffect, useRef, type TextareaHTMLAttributes } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type TextareaHTMLAttributes,
+} from "react";
 
 const PREFIX = "dataset-studio:textarea-height:";
 
@@ -9,18 +13,22 @@ export function PersistentTextarea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { storageKey: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const textarea = ref.current;
+    if (!textarea) return;
     try {
       const stored = Number(
         window.localStorage.getItem(`${PREFIX}${storageKey}`),
       );
-      if (ref.current && Number.isFinite(stored) && stored >= 48) {
-        ref.current.style.height = `${stored}px`;
-      }
+      const savedHeight = Number.isFinite(stored) && stored >= 48 ? stored : 0;
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.max(savedHeight, textarea.scrollHeight)}px`;
     } catch {
       // Storage can be unavailable in privacy-restricted contexts.
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
-  }, [storageKey]);
+  }, [storageKey, props.value]);
 
   const remember = () => {
     if (!ref.current) return;

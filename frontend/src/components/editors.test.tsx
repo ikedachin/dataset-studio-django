@@ -24,6 +24,20 @@ describe("dynamic editors", () => {
     });
   });
 
+  it("uses resizable textareas for all string fields", () => {
+    render(
+      <DynamicFieldEditor
+        value={{ short: "one line", long: "line one\nline two" }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByDisplayValue("one line").tagName).toBe("TEXTAREA");
+    expect(screen.getByDisplayValue("line one\nline two")).toHaveAttribute(
+      "wrap",
+      "soft",
+    );
+  });
+
   it("renders root record fields as movable tiles", () => {
     const { container, unmount } = render(
       <DynamicFieldEditor

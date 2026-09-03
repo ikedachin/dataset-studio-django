@@ -50,20 +50,15 @@ export function DynamicFieldEditor({
     </div>
   );
   if (typeof value === "string") {
-    const long = value.includes("\n") || value.length > 120;
     return (
       <div className="field">
         {header}
-        {long ? (
-          <PersistentTextarea
-            storageKey={path || label || "record"}
-            value={value}
-            rows={Math.min(12, Math.max(3, value.split("\n").length + 1))}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        ) : (
-          <input value={value} onChange={(e) => onChange(e.target.value)} />
-        )}
+        <PersistentTextarea
+          storageKey={path || label || "record"}
+          value={value}
+          rows={1}
+          onChange={(e) => onChange(e.target.value)}
+        />
       </div>
     );
   }
