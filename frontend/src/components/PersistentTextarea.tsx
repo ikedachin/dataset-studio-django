@@ -22,11 +22,11 @@ export function PersistentTextarea({
       );
       const savedHeight = Number.isFinite(stored) && stored >= 48 ? stored : 0;
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.max(savedHeight, textarea.scrollHeight)}px`;
+      textarea.style.height = `${Math.max(savedHeight, textarea.scrollHeight, 48)}px`;
     } catch {
       // Storage can be unavailable in privacy-restricted contexts.
       textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
+      textarea.style.height = `${Math.max(textarea.scrollHeight, 48)}px`;
     }
   }, [storageKey, props.value]);
 

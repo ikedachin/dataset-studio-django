@@ -25,17 +25,20 @@ describe("dynamic editors", () => {
   });
 
   it("uses resizable textareas for all string fields", () => {
-    render(
+    const { container } = render(
       <DynamicFieldEditor
         value={{ short: "one line", long: "line one\nline two" }}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByDisplayValue("one line").tagName).toBe("TEXTAREA");
-    expect(screen.getByDisplayValue("line one\nline two")).toHaveAttribute(
-      "wrap",
-      "soft",
+    const textareas = Array.from(
+      container.querySelectorAll<HTMLTextAreaElement>(".field-tile textarea"),
     );
+    expect(textareas).toHaveLength(2);
+    expect(textareas.every((textarea) => textarea.tagName === "TEXTAREA")).toBe(
+      true,
+    );
+    expect(textareas[1]).toHaveAttribute("wrap", "soft");
   });
 
   it("renders root record fields as movable tiles", () => {
@@ -168,7 +171,7 @@ describe("detail panels", () => {
       />,
     );
     expect(screen.getByText("$.answer")).toBeInTheDocument();
-    expect(screen.getByText(/old/)).toBeInTheDocument();
+    expect(screen.getByText(/"old"/)).toBeInTheDocument();
   });
   it("shows validation issues and empty success", () => {
     const { rerender } = render(
