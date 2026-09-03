@@ -6,7 +6,8 @@ from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from datasets_app.models import DatasetRecord, DatasetSplit
+from dataset_guard.policies import split_block_reason, visible_records, visible_splits
+from datasets_app.models import DatasetRecord
 from datasets_app.schemas.requests import RecordCreate, RecordUpdate, SyncRequest
 from datasets_app.services.diffing import structural_diff
 from datasets_app.services.records import (
@@ -28,8 +29,11 @@ from .serializers import record_detail, record_summary
 @api_errors
 @require_http_methods(["GET", "POST"])
 def split_records(request: HttpRequest, split_id: int) -> JsonResponse:
-    split = get_object_or_404(DatasetSplit, pk=split_id)
+    split = get_object_or_404(visible_splits(), pk=split_id)
     if request.method == "POST":
+        reason = split_block_reason(split)
+        if reason:
+            return error(reason[0], reason[1], 409)
         payload = body_as(request, RecordCreate)
         return success(record_detail(create_record(split, payload.data)), 201)
     try:
@@ -74,12 +78,21 @@ def split_records(request: HttpRequest, split_id: int) -> JsonResponse:
 @api_errors
 @require_http_methods(["GET", "PATCH", "DELETE"])
 def record(request: HttpRequest, record_id: int) -> JsonResponse:
-    value = get_object_or_404(DatasetRecord.objects.select_related("split"), pk=record_id)
+    value = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
     if request.method == "GET":
         return success(record_detail(value))
     if request.method == "DELETE":
+        reason = split_block_reason(value.split)
+        if reason:
+            return error(reason[0], reason[1], 409)
         return success(record_detail(set_deleted(value, True)))
     payload = body_as(request, RecordUpdate)
+    reason = split_block_reason(value.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
     try:
         return success(record_detail(update_record(value.pk, payload.version, payload.data)))
     except VersionConflict:
@@ -89,35 +102,69 @@ def record(request: HttpRequest, record_id: int) -> JsonResponse:
 
 @require_POST
 def duplicate(request: HttpRequest, record_id: int) -> JsonResponse:
-    return success(record_detail(duplicate_record(get_object_or_404(DatasetRecord, pk=record_id))), 201)
+    value = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
+    reason = split_block_reason(value.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
+    return success(record_detail(duplicate_record(value)), 201)
 
 
 @require_POST
 def restore(request: HttpRequest, record_id: int) -> JsonResponse:
-    return success(record_detail(set_deleted(get_object_or_404(DatasetRecord, pk=record_id), False)))
+    value = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
+    reason = split_block_reason(value.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
+    return success(record_detail(set_deleted(value, False)))
 
 
 @require_POST
 def revert(request: HttpRequest, record_id: int) -> JsonResponse:
-    value = revert_record(get_object_or_404(DatasetRecord, pk=record_id))
+    current = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
+    reason = split_block_reason(current.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
+    value = revert_record(current)
     return success(record_detail(value) if value else {"removed": True})
 
 
 @require_GET
 def diff(request: HttpRequest, record_id: int) -> JsonResponse:
-    value = get_object_or_404(DatasetRecord, pk=record_id)
+    value = get_object_or_404(visible_records(), pk=record_id)
     return success(structural_diff(value.original_json, value.current_json))
 
 
 @require_POST
 def validate(request: HttpRequest, record_id: int) -> JsonResponse:
-    return success(validate_record(get_object_or_404(DatasetRecord.objects.select_related("split__project"), pk=record_id)))
+    value = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
+    reason = split_block_reason(value.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
+    return success(validate_record(value))
 
 
 @api_errors
 @require_POST
 def sync(request: HttpRequest, record_id: int) -> JsonResponse:
-    value = get_object_or_404(DatasetRecord.objects.select_related("split__project"), pk=record_id)
+    value = get_object_or_404(
+        visible_records().select_related("split__project"),
+        pk=record_id,
+    )
+    reason = split_block_reason(value.split)
+    if reason:
+        return error(reason[0], reason[1], 409)
     payload = body_as(request, SyncRequest)
     preview = preview_sync(value.current_json, value.split.project.sync_rules)
     if not payload.apply:

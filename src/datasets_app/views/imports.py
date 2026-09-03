@@ -8,6 +8,7 @@ from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 
+from dataset_guard.policies import project_block_reason, visible_projects
 from datasets_app.models import ImportJob, Project
 from datasets_app.schemas.requests import HuggingFaceImport, LocalImport
 from datasets_app.services.importing import submit_import
@@ -29,7 +30,10 @@ def import_upload(request: HttpRequest) -> JsonResponse:
         return error("FILE_REQUIRED", "Choose a JSONL file")
     if Path(uploaded.name).suffix.lower() not in {".jsonl", ".ndjson"}:
         return error("INVALID_EXTENSION", "File must use .jsonl or .ndjson")
-    project = get_object_or_404(Project, pk=request.POST.get("project_id"))
+    project = get_object_or_404(visible_projects(), pk=request.POST.get("project_id"))
+    reason = project_block_reason(project)
+    if reason:
+        return error(reason[0], reason[1], 409)
     upload_dir = Path(settings.APP_DATA_DIR) / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=upload_dir, suffix=Path(uploaded.name).suffix, delete=False) as target:
@@ -49,7 +53,10 @@ def import_local(request: HttpRequest) -> JsonResponse:
         return error("FILE_NOT_FOUND", "The local file does not exist", 404)
     if path.suffix.lower() not in {".jsonl", ".ndjson"}:
         return error("INVALID_EXTENSION", "File must use .jsonl or .ndjson")
-    project = get_object_or_404(Project, pk=payload.project_id)
+    project = get_object_or_404(visible_projects(), pk=payload.project_id)
+    reason = project_block_reason(project)
+    if reason:
+        return error(reason[0], reason[1], 409)
     return success(job_data(_new_job(project, "local", {"path": str(path), "split_name": payload.split_name})), 202)
 
 
@@ -57,7 +64,10 @@ def import_local(request: HttpRequest) -> JsonResponse:
 @require_POST
 def import_huggingface(request: HttpRequest) -> JsonResponse:
     payload = body_as(request, HuggingFaceImport)
-    project = get_object_or_404(Project, pk=payload.project_id)
+    project = get_object_or_404(visible_projects(), pk=payload.project_id)
+    reason = project_block_reason(project)
+    if reason:
+        return error(reason[0], reason[1], 409)
     return success(job_data(_new_job(project, "huggingface", payload.model_dump(exclude={"project_id"}))), 202)
 
 

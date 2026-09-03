@@ -18,6 +18,8 @@ class Project(models.Model):
     sync_rules = models.JSONField(default=list, blank=True)
     identifier_fields = models.JSONField(default=default_identifier_fields, blank=True)
     validation_settings = models.JSONField(default=dict, blank=True)
+    is_protected = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -30,6 +32,8 @@ class DatasetSplit(models.Model):
     name = models.CharField(max_length=120)
     position = models.PositiveIntegerField(default=0)
     record_count = models.PositiveIntegerField(default=0)
+    is_protected = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["position", "id"]

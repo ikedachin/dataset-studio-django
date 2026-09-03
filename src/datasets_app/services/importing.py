@@ -11,6 +11,7 @@ from typing import Any
 from django.db import close_old_connections, transaction
 from django.utils import timezone
 
+from dataset_guard.policies import project_block_reason, split_block_reason
 from datasets_app.models import DatasetRecord, DatasetSplit, ImportJob
 
 from .json_tools import search_text
@@ -87,6 +88,9 @@ def run_import_job(job_id: int) -> None:
     split: DatasetSplit | None = None
     can_cleanup = False
     try:
+        reason = project_block_reason(job.project)
+        if reason:
+            raise ImportFormatError(reason[1])
         records, total = _source(job)
         job.progress_total = total
         job.save(update_fields=["progress_total"])
@@ -96,6 +100,9 @@ def run_import_job(job_id: int) -> None:
             name=split_name,
             defaults={"position": job.project.splits.count()},
         )
+        reason = split_block_reason(split)
+        if reason:
+            raise ImportFormatError(reason[1])
         if split.record_count:
             raise ImportFormatError(f"Split '{split.name}' already contains records")
         can_cleanup = True

@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "datasets_app.apps.DatasetsAppConfig",
+    "dataset_guard.apps.DatasetGuardConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
