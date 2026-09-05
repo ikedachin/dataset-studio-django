@@ -38,6 +38,8 @@ import type {
   ValidationIssue,
 } from "./types";
 
+const RECORDS_PER_PAGE = 500;
+
 export default function App() {
   const client = useQueryClient();
   const [projectId, setProjectId] = useState<number>();
@@ -86,6 +88,22 @@ export default function App() {
   }, [searchValue]);
   const validFilters = filters.filter((filter) => filter.path.trim());
   const filterQuery = JSON.stringify(validFilters);
+  const pageScope = JSON.stringify([
+    split?.id,
+    search,
+    status,
+    filterQuery,
+    sort,
+    direction,
+  ]);
+  const [pagination, setPagination] = useState({ scope: pageScope, index: 0 });
+  const pageIndex = pagination.scope === pageScope ? pagination.index : 0;
+  if (pagination.scope !== pageScope) {
+    setPagination({ scope: pageScope, index: 0 });
+  }
+  const [changingPage, setChangingPage] = useState(false);
+  const [pageError, setPageError] = useState("");
+  const pageSelection = useRef<"first" | "last">("first");
   const page = useQuery({
     queryKey: [
       "records",
@@ -95,16 +113,31 @@ export default function App() {
       filterQuery,
       sort,
       direction,
+      pageIndex,
     ],
     queryFn: () =>
       api<RecordPage>(
-        `/splits/${split!.id}/records/?limit=500&search=${encodeURIComponent(search)}&status=${status}&filters=${encodeURIComponent(filterQuery)}&sort=${encodeURIComponent(sort)}&direction=${direction}`,
+        `/splits/${split!.id}/records/?limit=${RECORDS_PER_PAGE}&offset=${pageIndex * RECORDS_PER_PAGE}&search=${encodeURIComponent(search)}&status=${status}&filters=${encodeURIComponent(filterQuery)}&sort=${encodeURIComponent(sort)}&direction=${direction}`,
       ),
     enabled: !!split,
   });
+  const totalPages = page.data
+    ? Math.ceil(page.data.total / RECORDS_PER_PAGE)
+    : 0;
   useEffect(() => {
-    if (!recordId && page.data?.items[0]) setRecordId(page.data.items[0].id);
-  }, [page.data, recordId]);
+    if (page.data && pageIndex > 0 && pageIndex >= totalPages) {
+      setPagination({ scope: pageScope, index: Math.max(0, totalPages - 1) });
+      setRecordId(undefined);
+      return;
+    }
+    if (!recordId && page.data?.items.length) {
+      const items = page.data.items;
+      setRecordId(
+        items[pageSelection.current === "last" ? items.length - 1 : 0].id,
+      );
+      pageSelection.current = "first";
+    }
+  }, [page.data, recordId, pageIndex, pageScope, totalPages]);
   const record = useQuery({
     queryKey: ["record", recordId],
     queryFn: () => api<RecordDetail>(`/records/${recordId}/`),
@@ -142,15 +175,51 @@ export default function App() {
     onSuccess: () =>
       void client.invalidateQueries({ queryKey: ["records", split?.id] }),
   });
+  const changePage = useCallback(
+    async (index: number, selection: "first" | "last" = "first") => {
+      if (changingPage || page.isFetching || index < 0 || index >= totalPages)
+        return;
+      setChangingPage(true);
+      setPageError("");
+      try {
+        if ((await autosave.save()) === false) {
+          setPageError(
+            "保存に失敗しました。再度保存してから移動してください。",
+          );
+          return;
+        }
+        pageSelection.current = selection;
+        setRecordId(undefined);
+        setPagination({ scope: pageScope, index });
+      } finally {
+        setChangingPage(false);
+      }
+    },
+    [autosave, changingPage, page.isFetching, pageScope, totalPages],
+  );
   const navigate = useCallback(
     async (direction: number) => {
-      await autosave.save();
+      if (changingPage || page.isFetching) return;
+      if ((await autosave.save()) === false) return;
       const items = page.data?.items ?? [];
       const index = items.findIndex((item) => item.id === recordId);
       const next = items[index + direction];
       if (next) setRecordId(next.id);
+      else if (index >= 0)
+        await changePage(
+          pageIndex + direction,
+          direction < 0 ? "last" : "first",
+        );
     },
-    [autosave, page.data, recordId],
+    [
+      autosave,
+      page.data,
+      page.isFetching,
+      recordId,
+      changePage,
+      pageIndex,
+      changingPage,
+    ],
   );
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -174,7 +243,10 @@ export default function App() {
         !(e.target instanceof HTMLTextAreaElement) &&
         !(e.target instanceof HTMLSelectElement)
       )
-        void navigate(e.key === "ArrowLeft" ? -1 : 1);
+        if (!(
+          e.target instanceof Element && e.target.closest(".record-pagination")
+        ))
+          void navigate(e.key === "ArrowLeft" ? -1 : 1);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -282,6 +354,9 @@ export default function App() {
   };
   const currentIndex =
     (page.data?.items.findIndex((item) => item.id === recordId) ?? -1) + 1;
+  const globalIndex = currentIndex
+    ? pageIndex * RECORDS_PER_PAGE + currentIndex
+    : 0;
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -397,7 +472,62 @@ export default function App() {
             <span>RECORDS</span>
             <strong>{page.data?.total.toLocaleString() ?? 0}</strong>
           </div>
+          <nav
+            className="record-pagination"
+            aria-label="レコードのページ切り替え"
+            aria-busy={page.isFetching || changingPage}
+          >
+            <div className="record-pagination-controls">
+              <button
+                aria-label="前のページ"
+                title="前のページ"
+                disabled={
+                  !pageIndex ||
+                  page.isFetching ||
+                  changingPage ||
+                  autosave.state === "saving"
+                }
+                onClick={() => void changePage(pageIndex - 1)}
+              >
+                <ChevronLeft />
+              </button>
+              <span aria-live="polite">
+                <strong>
+                  {page.data ? (totalPages ? pageIndex + 1 : 0) : "—"}
+                </strong>{" "}
+                / {page.data ? totalPages.toLocaleString() : "—"} ページ
+              </span>
+              <button
+                aria-label="次のページ"
+                title="次のページ"
+                disabled={
+                  !page.data ||
+                  pageIndex + 1 >= totalPages ||
+                  page.isFetching ||
+                  changingPage ||
+                  autosave.state === "saving"
+                }
+                onClick={() => void changePage(pageIndex + 1)}
+              >
+                <ChevronRight />
+              </button>
+            </div>
+            <small>
+              {page.isFetching
+                ? "読み込み中…"
+                : page.data?.total
+                  ? `${(page.data.offset + 1).toLocaleString()}–${(page.data.offset + page.data.items.length).toLocaleString()} / ${page.data.total.toLocaleString()} records`
+                  : "0 records"}
+            </small>
+            {(page.isError || pageError) && (
+              <small role="alert">
+                {pageError || "読み込みに失敗しました。"}
+                <button onClick={() => void page.refetch()}>再試行</button>
+              </small>
+            )}
+          </nav>
           <RecordList
+            key={`${pageScope}-${pageIndex}`}
             records={page.data?.items ?? []}
             selected={recordId}
             onSelect={async (id) => {
@@ -483,18 +613,30 @@ export default function App() {
               <div className="navigation">
                 <button
                   onClick={() => void navigate(-1)}
-                  disabled={currentIndex <= 1}
+                  disabled={
+                    !globalIndex ||
+                    globalIndex <= 1 ||
+                    page.isFetching ||
+                    changingPage ||
+                    autosave.state === "saving"
+                  }
                 >
                   <ChevronLeft />
                   Previous
                 </button>
                 <span>
-                  <strong>{currentIndex}</strong> /{" "}
+                  <strong>{globalIndex.toLocaleString()}</strong> /{" "}
                   {page.data?.total.toLocaleString()}
                 </span>
                 <button
                   onClick={() => void navigate(1)}
-                  disabled={currentIndex >= (page.data?.items.length ?? 0)}
+                  disabled={
+                    !globalIndex ||
+                    globalIndex >= (page.data?.total ?? 0) ||
+                    page.isFetching ||
+                    changingPage ||
+                    autosave.state === "saving"
+                  }
                 >
                   Next
                   <ChevronRight />
@@ -562,7 +704,7 @@ export default function App() {
       <footer className="statusbar">
         <span className="accent">{split?.name ?? "no split"}</span>
         <span>{page.data?.total.toLocaleString() ?? 0} records</span>
-        <span>Record {currentIndex || "—"}</span>
+        <span>Record {globalIndex ? globalIndex.toLocaleString() : "—"}</span>
         <span className={record.data?.status === "edited" ? "edited" : ""}>
           {record.data?.status ?? "No record"}
         </span>

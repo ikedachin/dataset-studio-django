@@ -42,9 +42,11 @@ export function useAutosave(
       version.current = result.version;
       setState(dirty.current ? "unsaved" : "saved");
       onSaved(result);
+      return true;
     } catch {
       dirty.current = true;
       setState("error");
+      return false;
     }
   }, [record, onSaved]);
   const markDirty = useCallback(() => {

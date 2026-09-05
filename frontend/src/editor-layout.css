@@ -84,10 +84,9 @@ textarea {
   overflow-wrap: anywhere;
 }
 .workspace {
-  grid-template-columns: var(--list-pane-width, 240px) 6px minmax(
-      360px,
-      1fr
-    ) 6px var(--details-pane-width, 300px);
+  grid-template-columns:
+    var(--list-pane-width, 240px) 6px minmax(360px, 1fr)
+    6px var(--details-pane-width, 300px);
 }
 .pane-resizer {
   position: relative;
@@ -142,4 +141,57 @@ textarea {
   .pane-resizer {
     display: none;
   }
+}
+
+.list-pane {
+  display: flex;
+  flex-direction: column;
+}
+.list-pane .pane-title {
+  flex-shrink: 0;
+}
+.list-pane .record-list {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.record-pagination {
+  flex-shrink: 0;
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--header-bg);
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.record-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.record-pagination-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  flex-shrink: 0;
+}
+.record-pagination-controls span {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.record-pagination strong {
+  color: var(--accent);
+}
+.record-pagination small {
+  font-size: 10px;
+}
+.record-pagination [role="alert"] {
+  color: var(--red);
+}
+.record-pagination button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

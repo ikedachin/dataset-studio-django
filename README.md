@@ -41,8 +41,10 @@ SQLite DBはデフォルトでプロジェクト直下の`dataset-studio.sqlite3
 ## Start
 
 ```bash
-uv run python manage.py runserver
+./start.sh
 ```
+
+依存関係の同期とDBマイグレーションを自動で実行してから起動します。終了は `Ctrl+C` です。ポートを変更する場合は `./start.sh 127.0.0.1:8001` のように指定できます。
 
 ブラウザで `http://127.0.0.1:8000` を開きます。Django development serverは既定でloopback interfaceだけにbindします。
 
