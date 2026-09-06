@@ -1,8 +1,4 @@
-import {
-  useLayoutEffect,
-  useRef,
-  type TextareaHTMLAttributes,
-} from "react";
+import { useLayoutEffect, useRef, type TextareaHTMLAttributes } from "react";
 
 const PREFIX = "dataset-studio:textarea-height:";
 
@@ -22,7 +18,7 @@ export function PersistentTextarea({
       );
       const savedHeight = Number.isFinite(stored) && stored >= 48 ? stored : 0;
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.max(savedHeight, textarea.scrollHeight, 48)}px`;
+      textarea.style.height = `${savedHeight || Math.max(textarea.scrollHeight, 48)}px`;
     } catch {
       // Storage can be unavailable in privacy-restricted contexts.
       textarea.style.height = "auto";

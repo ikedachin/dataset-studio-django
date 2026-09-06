@@ -56,38 +56,42 @@ describe("dynamic editors", () => {
     expect(
       container.querySelectorAll(".root-field-layout .field-tile"),
     ).toHaveLength(5);
-    expect(container.querySelector('[data-field-key="messages"]')).toHaveAttribute(
-      "draggable",
-      "true",
-    );
+    expect(
+      container.querySelector('[data-field-key="messages"]'),
+    ).toHaveAttribute("draggable", "true");
     unmount();
   });
 
   it("persists tile locks and order", () => {
     window.localStorage.clear();
     const { container, unmount } = render(
-      <DynamicFieldEditor value={{ question: "Q", answer: "A" }} onChange={vi.fn()} />,
+      <DynamicFieldEditor
+        value={{ question: "Q", answer: "A" }}
+        onChange={vi.fn()}
+      />,
     );
     fireEvent.dragStart(container.querySelector('[data-field-key="answer"]')!);
     fireEvent.drop(container.querySelector('[data-field-key="question"]')!, {
       dataTransfer: {},
     });
-    fireEvent.click(
-      container.querySelector('[aria-label="Lock question"]')!,
-    );
-    fireEvent.drop(
-      container.querySelector('[data-field-key="answer"]')!,
-      { dataTransfer: {} },
-    );
+    fireEvent.click(container.querySelector('[aria-label="Lock question"]')!);
+    fireEvent.drop(container.querySelector('[data-field-key="answer"]')!, {
+      dataTransfer: {},
+    });
     unmount();
     const restored = render(
-      <DynamicFieldEditor value={{ question: "Q", answer: "A" }} onChange={vi.fn()} />,
+      <DynamicFieldEditor
+        value={{ question: "Q", answer: "A" }}
+        onChange={vi.fn()}
+      />,
     );
     expect(
       restored.container.querySelector('[aria-label="Unlock question"]'),
     ).toBeInTheDocument();
     expect(
-      restored.container.querySelector(".field-tile")?.getAttribute("data-field-key"),
+      restored.container
+        .querySelector(".field-tile")
+        ?.getAttribute("data-field-key"),
     ).toBe("answer");
     restored.unmount();
   });
@@ -123,6 +127,50 @@ describe("dynamic editors", () => {
       "soft",
     );
   });
+
+  it.each([96, 360])(
+    "keeps a manual height of %ipx across record changes",
+    (height) => {
+      window.localStorage.clear();
+      const { rerender, unmount } = render(
+        <PersistentTextarea
+          storageKey="answer"
+          aria-label="Answer size"
+          value="first record"
+          readOnly
+        />,
+      );
+      const textarea = screen.getByLabelText("Answer size");
+      Object.defineProperty(textarea, "offsetHeight", {
+        configurable: true,
+        value: height,
+      });
+      Object.defineProperty(textarea, "scrollHeight", {
+        configurable: true,
+        value: 900,
+      });
+      fireEvent.pointerUp(textarea);
+      rerender(
+        <PersistentTextarea
+          storageKey="answer"
+          aria-label="Answer size"
+          value="a longer record"
+          readOnly
+        />,
+      );
+      expect(textarea).toHaveStyle({ height: `${height}px` });
+      rerender(
+        <PersistentTextarea
+          storageKey="answer"
+          aria-label="Answer size"
+          value="short"
+          readOnly
+        />,
+      );
+      expect(textarea).toHaveStyle({ height: `${height}px` });
+      unmount();
+    },
+  );
 
   it("preserves unknown message fields", () => {
     const change = vi.fn();
@@ -174,7 +222,7 @@ describe("detail panels", () => {
     expect(screen.getByText(/"old"/)).toBeInTheDocument();
   });
   it("shows validation issues and empty success", () => {
-    const { rerender } = render(
+    const { rerender, unmount } = render(
       <ValidationPanel
         issues={[
           {
