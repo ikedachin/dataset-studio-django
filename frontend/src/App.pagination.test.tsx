@@ -15,14 +15,34 @@ vi.mock("./api/client", () => ({
   jsonBody: vi.fn(),
   ApiError: class extends Error {},
 }));
-vi.mock("./components/RecordList", () => ({ RecordList: () => null }));
+vi.mock("./components/RecordList", () => ({
+  RecordList: ({
+    records,
+    onSelect,
+  }: {
+    records: { id: number }[];
+    onSelect: (id: number) => void;
+  }) => (
+    <div>
+      {records
+        .filter((r) => [750, 1000, 1050].includes(r.id))
+        .map((r) => (
+          <button key={r.id} onClick={() => onSelect(r.id)}>
+            Select {r.id}
+          </button>
+        ))}
+    </div>
+  ),
+}));
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 function setup(total = 550) {
-  vi.mocked(api).mockImplementation(async (path) => {
+  const deleted = new Set<number>();
+  vi.mocked(api).mockImplementation(async (path, options) => {
     if (path === "/projects/") return [{ id: 1, name: "Test", syncRules: [] }];
     if (path === "/projects/1/splits/")
       return [
@@ -31,11 +51,14 @@ function setup(total = 550) {
     if (path.startsWith("/splits/1/records/")) {
       const params = new URL(path, "http://localhost").searchParams;
       const offset = Number(params.get("offset"));
-      const count = params.get("search") ? 1 : total;
+      const ids = Array.from({ length: total }, (_, i) => i + 1).filter(
+        (id) => !deleted.has(id),
+      );
+      const count = params.get("search") ? 1 : ids.length;
       return {
         items: Array.from(
           { length: Math.max(0, Math.min(500, count - offset)) },
-          (_, i) => ({ id: offset + i + 1 }),
+          (_, i) => ({ id: ids[offset + i] }),
         ),
         total: count,
         offset,
@@ -44,13 +67,15 @@ function setup(total = 550) {
     }
     if (path.endsWith("/diff/")) return [];
     const id = Number(path.split("/")[2]);
+    if (options?.method === "DELETE") deleted.add(id);
     return {
       id,
       position: id,
       preview: `Item ${id}`,
       data: {},
       version: 1,
-      status: "unedited",
+      status: deleted.has(id) ? "deleted" : "unedited",
+      isDeleted: deleted.has(id),
     };
   });
   render(
@@ -92,3 +117,24 @@ it("disables both arrows for an empty dataset", async () => {
   expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
 });
+
+it.each([750, 1000, 1050])(
+  "moves to the successor of deleted record %i instead of the page start",
+  async (id) => {
+    setup(1100);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    await screen.findByText("1–500 / 1,100 records");
+    fireEvent.click(screen.getByRole("button", { name: "次のページ" }));
+    await screen.findByText("501–1,000 / 1,100 records");
+    if (id > 1000) {
+      fireEvent.click(screen.getByRole("button", { name: "次のページ" }));
+      await screen.findByText("1,001–1,100 / 1,100 records");
+    }
+    fireEvent.click(screen.getByRole("button", { name: `Select ${id}` }));
+    await screen.findByRole("heading", { name: `Item ${id}` });
+    fireEvent.click(screen.getByTitle("Delete"));
+    await screen.findByTitle("Restore");
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    await screen.findByRole("heading", { name: `Item ${id + 1}` });
+  },
+);

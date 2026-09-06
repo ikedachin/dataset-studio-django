@@ -104,6 +104,9 @@ export default function App() {
   const [changingPage, setChangingPage] = useState(false);
   const [pageError, setPageError] = useState("");
   const pageSelection = useRef<"first" | "last">("first");
+  const removedSelection = useRef<
+    { id: number; scope: string; page: number; index: number } | undefined
+  >(undefined);
   const page = useQuery({
     queryKey: [
       "records",
@@ -203,9 +206,24 @@ export default function App() {
       if ((await autosave.save()) === false) return;
       const items = page.data?.items ?? [];
       const index = items.findIndex((item) => item.id === recordId);
-      const next = items[index + direction];
+      const removed = removedSelection.current;
+      const removedIndex =
+        removed &&
+        removed.id === recordId &&
+        removed.scope === pageScope &&
+        removed.page === pageIndex
+          ? removed.index
+          : -1;
+      // A deleted row's successor now occupies its former index.
+      const nextIndex =
+        index >= 0
+          ? index + direction
+          : removedIndex >= 0
+            ? removedIndex + (direction > 0 ? 0 : -1)
+            : -1;
+      const next = items[nextIndex];
       if (next) setRecordId(next.id);
-      else if (index >= 0)
+      else if (index >= 0 || removedIndex >= 0)
         await changePage(
           pageIndex + direction,
           direction < 0 ? "last" : "first",
@@ -218,6 +236,7 @@ export default function App() {
       recordId,
       changePage,
       pageIndex,
+      pageScope,
       changingPage,
     ],
   );
@@ -273,7 +292,7 @@ export default function App() {
   if (!project) return <EmptyState onCreate={createProject} />;
   const mutateRecord = async (action: string, method = "POST") => {
     if (!recordId) return;
-    await autosave.save();
+    if ((await autosave.save()) === false) return;
     if (
       action === "revert" &&
       !window.confirm("Revert this record to its imported state?")
@@ -281,10 +300,20 @@ export default function App() {
       return;
     if (action === "delete" && !window.confirm("Mark this record as deleted?"))
       return;
+    const selectionIndex =
+      page.data?.items.findIndex((item) => item.id === recordId) ?? -1;
     const result = await api<RecordDetail | { removed: boolean }>(
       `/records/${recordId}/${action === "delete" ? "" : `${action}/`}`,
       { method: action === "delete" ? "DELETE" : method },
     );
+    if (action === "delete" && selectionIndex >= 0) {
+      removedSelection.current = {
+        id: recordId,
+        scope: pageScope,
+        page: pageIndex,
+        index: selectionIndex,
+      };
+    }
     await client.invalidateQueries({ queryKey: ["records", split?.id] });
     if ("removed" in result) setRecordId(undefined);
     else {
@@ -354,6 +383,24 @@ export default function App() {
   };
   const currentIndex =
     (page.data?.items.findIndex((item) => item.id === recordId) ?? -1) + 1;
+  const removed = removedSelection.current;
+  const removedIndex =
+    !currentIndex &&
+    removed &&
+    removed.id === recordId &&
+    removed.scope === pageScope &&
+    removed.page === pageIndex
+      ? removed.index
+      : -1;
+  const canNavigatePrevious =
+    removedIndex >= 0
+      ? pageIndex > 0 || removedIndex > 0
+      : currentIndex > 1 || (currentIndex > 0 && pageIndex > 0);
+  const canNavigateNext =
+    removedIndex >= 0
+      ? pageIndex * RECORDS_PER_PAGE + removedIndex < (page.data?.total ?? 0)
+      : currentIndex > 0 &&
+        pageIndex * RECORDS_PER_PAGE + currentIndex < (page.data?.total ?? 0);
   const globalIndex = currentIndex
     ? pageIndex * RECORDS_PER_PAGE + currentIndex
     : 0;
@@ -614,8 +661,7 @@ export default function App() {
                 <button
                   onClick={() => void navigate(-1)}
                   disabled={
-                    !globalIndex ||
-                    globalIndex <= 1 ||
+                    !canNavigatePrevious ||
                     page.isFetching ||
                     changingPage ||
                     autosave.state === "saving"
@@ -631,8 +677,7 @@ export default function App() {
                 <button
                   onClick={() => void navigate(1)}
                   disabled={
-                    !globalIndex ||
-                    globalIndex >= (page.data?.total ?? 0) ||
+                    !canNavigateNext ||
                     page.isFetching ||
                     changingPage ||
                     autosave.state === "saving"
