@@ -44,6 +44,7 @@ export function ExportPanel({
           <a
             className="button download-button"
             href={`/api/export/download/?split_id=${split.id}`}
+            onClick={onClose}
           >
             <Download />
             Download {split.name}_edited.jsonl
